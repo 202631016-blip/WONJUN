@@ -3,287 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>탈출! 조퇴 작전</title>
+    <title>3D 탈출! 조퇴 작전</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Pretendard', '맑은 고딕', sans-serif;
-        }
-
         body {
-            background-color: #2b3a42;
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .game-container {
-            background-color: #3f51b5;
-            width: 100%;
-            max-width: 600px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            padding: 30px;
-            text-align: center;
-            position: relative;
+            margin: 0;
             overflow: hidden;
+            font-family: '맑은 고딕', sans-serif;
+            user-select: none;
+            background-color: #000;
         }
 
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 20px;
-            color: #ffeb3b;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
         }
 
-        .status-bar {
-            display: flex;
-            justify-content: space-around;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #ffffff;
+            font-size: 18px;
             font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
         }
 
-        .scene-img {
-            width: 100%;
-            height: 200px;
-            background-color: #e0e0e0;
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 4rem;
-            margin-bottom: 20px;
+        .status {
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: inline-block;
         }
 
-        .story-box {
-            background-color: #ffffff;
-            color: #333;
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin-bottom: 20px;
-            min-height: 80px;
-            text-align: left;
-        }
-
-        .choices {
+        #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 2rem;
+            display: none;
         }
 
-        .btn {
+        button {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 1.2rem;
+            font-weight: bold;
             background-color: #ff9800;
             color: white;
             border: none;
-            padding: 15px 20px;
-            font-size: 1rem;
-            font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: 0.2s;
         }
 
-        .btn:hover {
+        button:hover {
             background-color: #e68a00;
-            transform: translateY(-2px);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .restart-btn {
-            background-color: #4caf50;
-            margin-top: 10px;
-        }
-
-        .restart-btn:hover {
-            background-color: #388e3c;
         }
     </style>
+    <!-- 3D 그래픽 라이브러리 Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-    <div class="game-container">
-        <h1>🏃‍♂️ 탈출! 조퇴 작전</h1>
-        
-        <div class="status-bar">
-            <span>위험도: <span id="danger-level">0%</span></span>
-            <span>체력: <span id="hp">100</span> HP</span>
-        </div>
+    <div id="canvas-container"></div>
 
-        <div class="scene-img" id="scene-icon">🏫</div>
+    <div id="ui-layer">
+        <div class="status" id="objective">📋 미션: 조퇴증(노란색)을 찾으세요!</div><br>
+        <div class="status">🎮 조종: W, A, S, D | 마우스 드래그로 화면 회전</div>
+    </div>
 
-        <div class="story-box" id="story-text">
-            갑자기 머리가 아프고 집으로 돌아가고 싶어졌습니다. 무사히 조퇴 도장을 받고 집으로 탈출해야 합니다!
-        </div>
-
-        <div class="choices" id="choices-container">
-            <button class="btn" onclick="makeChoice(1)">양호실로 이동해 엄살을 피운다.</button>
-            <button class="btn" onclick="makeChoice(2)">담임 선생님께 솔직하게 집 가고 싶다고 말한다.</button>
-            <button class="btn" onclick="makeChoice(3)">가방을 싸서 몰래 담장을 넘는다.</button>
-        </div>
+    <div id="game-over-screen">
+        <h1 id="game-result-title">게 임 오 버</h1>
+        <p id="game-result-desc">선생님에게 걸렸습니다!</p>
+        <button onclick="restartGame()">다시 시도하기</button>
     </div>
 
     <script>
-        let state = {
-            danger: 0,
-            hp: 100
-        };
+        let scene, camera, renderer;
+        let player, teacher, teacherVision, keyItem, exitDoor;
+        let hasKey = false;
+        let isGameOver = false;
 
-        const scenes = {
-            start: {
-                icon: "🏫",
-                text: "갑자기 머리가 아프고 너무 집으로 가고 싶어졌습니다. 어떻게 조퇴 작전을 시작할까요?",
-                choices: [
-                    { text: "양호실(보건실)로 가서 아픈 척을 한다.", next: "infirmary" },
-                    { text: "담임 선생님을 찾아가 진지하게 상담한다.", next: "teacher" },
-                    { text: "선생님 눈을 피해 몰래 교문을 나간다.", next: "escape" }
-                ]
-            },
-            infirmary: {
-                icon: "🏥",
-                text: "보건 선생님이 체온계를 들고 다가옵니다. 어떤 연기를 펼칠까요?",
-                choices: [
-                    { text: "배를 움켜쥐며 맹장염인 것 같다고 한다.", danger: 20, next: "infirmary_fail" },
-                    { text: "열이 나는 것 같다며 어지러운 척을 한다.", danger: -10, next: "infirmary_success" }
-                ]
-            },
-            infirmary_fail: {
-                icon: "💊",
-                text: "보건 선생님: '맹장이면 119 불러야겠다!' 연기가 들통나 소화제만 먹고 교실로 쫓겨났습니다. (위험도 상승)",
-                choices: [
-                    { text: "다음 기회를 노린다.", next: "teacher" }
-                ]
-            },
-            infirmary_success: {
-                icon: "📝",
-                text: "보건 선생님: '체온은 정상이지만 얼굴이 안 좋아 보이네. 조퇴증 써줄 테니 담임 선생님께 가보렴!' 1단계 성공!",
-                choices: [
-                    { text: "조퇴증을 들고 담임 선생님에게 간다.", next: "teacher_stamp" }
-                ]
-            },
-            teacher: {
-                icon: "👨‍🏫",
-                text: "담임 선생님이 날카로운 눈빛으로 바라봅니다. '무슨 일이니?'",
-                choices: [
-                    { text: "부모님이 집에서 기다리신다고 거짓말한다.", danger: 30, next: "teacher_call" },
-                    { text: "몸이 너무 안 좋아서 집에서 쉬고 싶다고 한다.", danger: 10, next: "teacher_stamp" }
-                ]
-            },
-            teacher_call: {
-                icon: "📞",
-                text: "선생님: '그래? 부모님께 확인 전화 드려볼게.' 전화 통화로 거짓말이 걸렸습니다!",
-                choices: [
-                    { text: "걸음아 나 살려라! 그냥 정문으로 튄다!", next: "escape" }
-                ]
-            },
-            teacher_stamp: {
-                icon: "🖋️",
-                text: "담임 선생님이 조퇴 사유를 듣고 조퇴증에 도장을 찍어주었습니다! 이제 마지막으로 경비원 아저씨를 지나쳐야 합니다.",
-                choices: [
-                    { text: "당당하게 조퇴증을 보여주고 교문을 나간다.", next: "win" },
-                    { text: "수상하게 경비실 눈치를 보며 기어간다.", danger: 50, next: "caught" }
-                ]
-            },
-            escape: {
-                icon: "🏃‍♂️",
-                text: "담장을 넘으려는 순간, 멀리서 학생부장 선생님의 목소리가 들립니다! '거기 너 누구야?!'",
-                choices: [
-                    { text: "죽기 살기로 담장을 넘는다!", danger: 40, next: "escape_action" },
-                    { text: "바로 무릎을 꿇고 죄송하다고 한다.", danger: 0, next: "start" }
-                ]
-            },
-            escape_action: {
-                icon: "🧱",
-                text: "담장을 넘어 무사히 학교 밖으로 탈출했습니다! 단, 다음 날 벌점이 기다리고 있습니다.",
-                choices: [
-                    { text: "어쨌든 조퇴 성공! (대신 벌점 획득)", next: "win_escape" }
-                ]
-            },
-            caught: {
-                icon: "🚨",
-                text: "경비원 아저씨에게 수상한 사람으로 오인받아 붙잡혔습니다. 조퇴 실패...",
-                isEnd: true,
-                success: false
-            },
-            win: {
-                icon: "🎉",
-                text: "축하합니다! 완벽한 명분과 절차로 당당하게 조퇴에 성공했습니다! 완벽한 승리!",
-                isEnd: true,
-                success: true
-            },
-            win_escape: {
-                icon: "💨",
-                text: "조퇴에는 성공했지만 위험천만한 탈출이었습니다! 절반의 성공!",
-                isEnd: true,
-                success: true
-            }
-        };
+        // 키보드 입력 상태
+        const keys = { w: false, a: false, s: false, d: false };
 
-        let currentScene = "start";
+        // 마우스 회전 관련
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let cameraAngleY = 0;
 
-        function updateUI() {
-            const scene = scenes[currentScene];
-            document.getElementById("scene-icon").innerText = scene.icon;
-            document.getElementById("story-text").innerText = scene.text;
-            document.getElementById("danger-level").innerText = state.danger + "%";
-            document.getElementById("hp").innerText = state.hp;
+        // 선생님 이동 관련
+        let teacherDirection = 1;
+        const teacherSpeed = 0.08;
 
-            const choicesContainer = document.getElementById("choices-container");
-            choicesContainer.innerHTML = "";
+        function init() {
+            // 1. 씬 생성
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a24);
 
-            if (scene.isEnd) {
-                const restartBtn = document.createElement("button");
-                restartBtn.className = "btn restart-btn";
-                restartBtn.innerText = "처음부터 다시 하기";
-                restartBtn.onclick = resetGame;
-                choicesContainer.appendChild(restartBtn);
-                return;
-            }
+            // 2. 카메라 설정
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-            scene.choices.forEach((choice, index) => {
-                const btn = document.createElement("button");
-                btn.className = "btn";
-                btn.innerText = choice.text;
-                btn.onclick = () => selectChoice(choice);
-                choicesContainer.appendChild(btn);
-            });
+            // 3. 렌더러 설정
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // 4. 조명
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(20, 40, 20);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // 5. 맵 (바닥 및 벽)
+            createMap();
+
+            // 6. 플레이어 (초록색)
+            const playerGeo = new THREE.CapsuleGeometry(0.5, 1, 4, 8);
+            const playerMat = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
+            player = new THREE.Mesh(playerGeo, playerMat);
+            player.position.set(-18, 1, 18);
+            player.castShadow = true;
+            scene.add(player);
+
+            // 7. 선생님 (빨간색) + 시야 영역
+            const teacherGeo = new THREE.CapsuleGeometry(0.5, 1.2, 4, 8);
+            const teacherMat = new THREE.MeshStandardMaterial({ color: 0xe74c3c });
+            teacher = new THREE.Mesh(teacherGeo, teacherMat);
+            teacher.position.set(0, 1.1, 0);
+            teacher.castShadow = true;
+            scene.add(teacher);
+
+            // 선생님 시야 (붉은색 원뿔 감시 구역)
+            const visionGeo = new THREE.ConeGeometry(5, 8, 16);
+            const visionMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.35 });
+            teacherVision = new THREE.Mesh(visionGeo, visionMat);
+            teacherVision.rotation.x = Math.PI / 2;
+            teacherVision.position.set(0, -0.5, -4);
+            teacher.add(teacherVision);
+
+            // 8. 조퇴증 (노란색 보석)
+            const keyGeo = new THREE.OctahedronGeometry(0.6);
+            const keyMat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, emissive: 0xf39c12 });
+            keyItem = new THREE.Mesh(keyGeo, keyMat);
+            keyItem.position.set(18, 1, -18);
+            scene.add(keyItem);
+
+            // 9. 출구 (파란색 영역)
+            const exitGeo = new THREE.BoxGeometry(4, 3, 0.5);
+            const exitMat = new THREE.MeshStandardMaterial({ color: 0x3498db, transparent: true, opacity: 0.7 });
+            exitDoor = new THREE.Mesh(exitGeo, exitMat);
+            exitDoor.position.set(-18, 1.5, -19.5);
+            scene.add(exitDoor);
+
+            // 이벤트 리스너 등록
+            window.addEventListener('keydown', (e) => handleKey(e, true));
+            window.addEventListener('keyup', (e) => handleKey(e, false));
+            window.addEventListener('resize', onWindowResize);
+
+            // 마우스 드래그로 카메라 회전
+            const container = document.getElementById('canvas-container');
+            container.addEventListener('mousedown', (e) => { isDragging = true; previousMousePosition = { x: e.clientX, y: e.clientY }; });
+            window.addEventListener('mouseup', () => isDragging = false);
+            window.addEventListener('mousemove', handleMouseRotate);
+
+            animate();
         }
 
-        function selectChoice(choice) {
-            if (choice.danger) {
-                state.danger += choice.danger;
+        function createMap() {
+            // 바닥
+            const floorGeo = new THREE.PlaneGeometry(40, 40);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x34495e });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // 테두리 벽
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x7f8c8d });
+            const wallGeo = new THREE.BoxGeometry(40, 4, 1);
+
+            const wallN = new THREE.Mesh(wallGeo, wallMat); wallN.position.set(0, 2, -20); scene.add(wallN);
+            const wallS = new THREE.Mesh(wallGeo, wallMat); wallS.position.set(0, 2, 20); scene.add(wallS);
+            
+            const wallW = new THREE.Mesh(wallGeo, wallMat); wallW.rotation.y = Math.PI/2; wallW.position.set(-20, 2, 0); scene.add(wallW);
+            const wallE = new THREE.Mesh(wallGeo, wallMat); wallE.rotation.y = Math.PI/2; wallE.position.set(20, 2, 0); scene.add(wallE);
+
+            // 장애물(책상/벽)
+            const obstacleMat = new THREE.MeshStandardMaterial({ color: 0x95a5a6 });
+            const obs1 = new THREE.Mesh(new THREE.BoxGeometry(12, 3, 2), obstacleMat); obs1.position.set(-8, 1.5, 5); scene.add(obs1);
+            const obs2 = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 12), obstacleMat); obs2.position.set(8, 1.5, -5); scene.add(obs2);
+        }
+
+        function handleKey(e, isDown) {
+            const k = e.key.toLowerCase();
+            if (k === 'w' || k === 'ㅈ') keys.w = isDown;
+            if (k === 'a' || k === 'ㅁ') keys.a = isDown;
+            if (k === 's' || k === 'ㄴ') keys.s = isDown;
+            if (k === 'd' || k === 'ㅇ') keys.d = isDown;
+        }
+
+        function handleMouseRotate(e) {
+            if (!isDragging) return;
+            const deltaX = e.clientX - previousMousePosition.x;
+            cameraAngleY -= deltaX * 0.005;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        }
+
+        function updatePlayer() {
+            if (isGameOver) return;
+
+            const speed = 0.15;
+            let moveX = 0;
+            let moveZ = 0;
+
+            if (keys.w) moveZ -= 1;
+            if (keys.s) moveZ += 1;
+            if (keys.a) moveX -= 1;
+            if (keys.d) moveX += 1;
+
+            if (moveX !== 0 || moveZ !== 0) {
+                // 카메라 방향 기준으로 플레이어 이동
+                const moveVec = new THREE.Vector3(moveX, 0, moveZ).normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraAngleY);
+                
+                player.position.x += moveVec.x * speed;
+                player.position.z += moveVec.z * speed;
+
+                // 맵 경계 제한
+                player.position.x = Math.max(-19, Math.min(19, player.position.x));
+                player.position.z = Math.max(-19, Math.min(19, player.position.z));
             }
 
-            if (state.danger >= 100) {
-                currentScene = "caught";
+            // 카메라가 플레이어를 추적
+            const cameraOffset = new THREE.Vector3(0, 12, 16).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraAngleY);
+            camera.position.copy(player.position).add(cameraOffset);
+            camera.lookAt(player.position);
+        }
+
+        function updateTeacher() {
+            if (isGameOver) return;
+
+            // 선생님 좌우 순찰
+            teacher.position.x += teacherSpeed * teacherDirection;
+            if (teacher.position.x > 12) {
+                teacherDirection = -1;
+                teacher.rotation.y = -Math.PI / 2;
+            } else if (teacher.position.x < -12) {
+                teacherDirection = 1;
+                teacher.rotation.y = Math.PI / 2;
+            }
+
+            // 감시 체크: 플레이어가 선생님의 시야 거리(6 단위) 내에 들어왔는지 계산
+            const dist = teacher.position.distanceTo(player.position);
+            if (dist < 5.5) {
+                triggerGameOver(false, "선생님의 시야에 걸렸습니다!");
+            }
+        }
+
+        function checkInteractions() {
+            if (isGameOver) return;
+
+            // 1. 조퇴증 획득 체크
+            if (!hasKey && keyItem) {
+                keyItem.rotation.y += 0.03;
+                if (player.position.distanceTo(keyItem.position) < 1.5) {
+                    hasKey = true;
+                    scene.remove(keyItem);
+                    document.getElementById('objective').innerText = "🚪 미션: 탈출구(파란색)로 이동하세요!";
+                    document.getElementById('objective').style.color = "#2ecc71";
+                }
+            }
+
+            // 2. 탈출 성공 체크
+            if (hasKey && player.position.distanceTo(exitDoor.position) < 2) {
+                triggerGameOver(true, "축하합니다! 조퇴에 성공했습니다!");
+            }
+        }
+
+        function triggerGameOver(isWin, message) {
+            isGameOver = true;
+            const screen = document.getElementById('game-over-screen');
+            const title = document.getElementById('game-result-title');
+            const desc = document.getElementById('game-result-desc');
+
+            screen.style.display = 'flex';
+            if (isWin) {
+                title.innerText = "🎉 탈 출 성 공 !";
+                title.style.color = "#4caf50";
             } else {
-                currentScene = choice.next;
+                title.innerText = "🚨 게 임 오 버";
+                title.style.color = "#f44336";
+            }
+            desc.innerText = message;
+        }
+
+        function restartGame() {
+            isGameOver = false;
+            hasKey = false;
+            player.position.set(-18, 1, 18);
+            teacher.position.set(0, 1.1, 0);
+
+            if (!scene.children.includes(keyItem)) {
+                scene.add(keyItem);
             }
 
-            updateUI();
+            document.getElementById('objective').innerText = "📋 미션: 조퇴증(노란색)을 찾으세요!";
+            document.getElementById('objective').style.color = "#ffffff";
+            document.getElementById('game-over-screen').style.display = 'none';
         }
 
-        function resetGame() {
-            state.danger = 0;
-            state.hp = 100;
-            currentScene = "start";
-            updateUI();
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // 초기 시작
-        updateUI();
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePlayer();
+            updateTeacher();
+            checkInteractions();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = init;
     </script>
 </body>
 </html>
